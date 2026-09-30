@@ -29,13 +29,21 @@ export const s3Client = new S3Client({
   forcePathStyle: true,
 });
 
+const presignedUrlCache = new Map<string, { url: string; expiresAt: number }>();
+
 /**
  * Generates an authorized presigned GET download URL for private bucket objects
  */
 export async function createPresignedDownloadUrl(
   fileKey: string,
-  expiresInSeconds = 86400 // 24 hours
+  expiresInSeconds = 604800 // 7 days
 ): Promise<string> {
+  const now = Date.now();
+  const cached = presignedUrlCache.get(fileKey);
+  if (cached && cached.expiresAt > now + 3600000) {
+    return cached.url;
+  }
+
   if (!s3Bucket || !accessKeyId || !secretAccessKey) {
     throw new Error('S3 credentials are not configured');
   }
@@ -45,9 +53,16 @@ export async function createPresignedDownloadUrl(
     Key: fileKey,
   });
 
-  return getSignedUrl(s3Client, command, {
+  const url = await getSignedUrl(s3Client, command, {
     expiresIn: expiresInSeconds,
   });
+
+  presignedUrlCache.set(fileKey, {
+    url,
+    expiresAt: now + expiresInSeconds * 1000,
+  });
+
+  return url;
 }
 
 /**

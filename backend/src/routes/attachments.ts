@@ -14,7 +14,7 @@ import { z } from 'zod';
 import path from 'path';
 
 export const attachmentRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
-  // GET /api/attachments/file/:id - Redirects to a freshly generated presigned URL or streams directly
+  // GET /api/attachments/file/:id - Redirects to a cached presigned URL or streams directly with browser caching
   fastify.get('/attachments/file/:id', async (request, reply) => {
     const { id } = request.params as { id: string };
 
@@ -27,10 +27,18 @@ export const attachmentRoutes: FastifyPluginAsync = async (fastify: FastifyInsta
       return reply.status(404).send({ error: 'Attachment not found' });
     }
 
+    // Check ETag for conditional caching (304 Not Modified)
+    const etag = `"${attachment.id}-${attachment.fileSize || 0}"`;
+    if (request.headers['if-none-match'] === etag) {
+      return reply.status(304).send();
+    }
+
+    reply.header('ETag', etag);
+    reply.header('Cache-Control', 'public, max-age=604800, immutable');
+
     try {
-      // Generate a fresh 24-hour presigned URL and redirect seamlessly
-      const signedUrl = await createPresignedDownloadUrl(attachment.fileKey, 86400);
-      reply.header('Cache-Control', 'no-cache');
+      // 7-day cached presigned URL
+      const signedUrl = await createPresignedDownloadUrl(attachment.fileKey, 604800);
       return reply.redirect(302, signedUrl);
     } catch (err: any) {
       // Fallback: stream directly from S3
@@ -61,17 +69,17 @@ export const attachmentRoutes: FastifyPluginAsync = async (fastify: FastifyInsta
       return reply.status(404).send({ error: 'Attachment not found' });
     }
 
-    const signedUrl = await createPresignedDownloadUrl(attachment.fileKey, 86400);
+    const signedUrl = await createPresignedDownloadUrl(attachment.fileKey, 604800);
     return {
       id: attachment.id,
       fileName: attachment.fileName,
       fileKey: attachment.fileKey,
       fileUrl: signedUrl,
-      expiresIn: 86400,
+      expiresIn: 604800,
     };
   });
 
-  // GET /api/attachments - List all attachments with fresh presigned URLs
+  // GET /api/attachments - List all attachments with stable URLs
   fastify.get('/attachments', async (request, reply) => {
     const list = await db
       .select({
@@ -89,28 +97,16 @@ export const attachmentRoutes: FastifyPluginAsync = async (fastify: FastifyInsta
       .leftJoin(notes, eq(attachments.noteId, notes.id))
       .orderBy(desc(attachments.createdAt));
 
-    // Sign all URLs with fresh 24-hour expiration
-    const results = await Promise.all(
-      list.map(async (item) => {
-        try {
-          const presigned = await createPresignedDownloadUrl(item.fileKey, 86400);
-          return {
-            ...item,
-            fileUrl: presigned,
-          };
-        } catch {
-          return {
-            ...item,
-            fileUrl: `/api/attachments/file/${item.id}`,
-          };
-        }
-      })
-    );
+    // Return stable /api/attachments/file/:id so browser caches every image by its ID
+    const results = list.map((item) => ({
+      ...item,
+      fileUrl: `/api/attachments/file/${item.id}`,
+    }));
 
     return results;
   });
 
-  // POST /api/attachments/upload - Direct multipart upload and return presigned URL
+  // POST /api/attachments/upload - Direct multipart upload and return stable URL
   fastify.post('/attachments/upload', async (request, reply) => {
     const data = await request.file();
     if (!data) {
@@ -134,17 +130,14 @@ export const attachmentRoutes: FastifyPluginAsync = async (fastify: FastifyInsta
         mimeType,
       });
 
-      // Generate authorized 24-hour presigned URL
-      const signedUrl = await createPresignedDownloadUrl(fileKey, 86400).catch(
-        () => `/api/attachments/file/${attachmentId}`
-      );
+      const permanentUrl = `/api/attachments/file/${attachmentId}`;
 
       await db.insert(attachments).values({
         id: attachmentId,
         noteId: noteId || null,
         fileName: originalName,
         fileKey,
-        fileUrl: signedUrl,
+        fileUrl: permanentUrl,
         fileSize: fileBuffer.length,
         mimeType,
       });
@@ -156,7 +149,7 @@ export const attachmentRoutes: FastifyPluginAsync = async (fastify: FastifyInsta
 
       return reply.status(201).send({
         ...created,
-        fileUrl: signedUrl,
+        fileUrl: permanentUrl,
       });
     } catch (err: any) {
       fastify.log.error(err);
@@ -223,16 +216,14 @@ export const attachmentRoutes: FastifyPluginAsync = async (fastify: FastifyInsta
 
     const { id, noteId, fileName, fileKey, fileSize, mimeType } = parsed.data;
     const attachmentId = id || uuidv4();
-    const signedUrl = await createPresignedDownloadUrl(fileKey, 86400).catch(
-      () => `/api/attachments/file/${attachmentId}`
-    );
+    const permanentUrl = `/api/attachments/file/${attachmentId}`;
 
     await db.insert(attachments).values({
       id: attachmentId,
       noteId: noteId || null,
       fileName,
       fileKey,
-      fileUrl: signedUrl,
+      fileUrl: permanentUrl,
       fileSize,
       mimeType,
     });
@@ -244,7 +235,7 @@ export const attachmentRoutes: FastifyPluginAsync = async (fastify: FastifyInsta
 
     return reply.status(201).send({
       ...created,
-      fileUrl: signedUrl,
+      fileUrl: permanentUrl,
     });
   });
 
