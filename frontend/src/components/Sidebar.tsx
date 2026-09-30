@@ -80,6 +80,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside
+      id="app-left-sidebar"
       className={`border-r border-slate-200 dark:border-slate-800 bg-slate-50/95 dark:bg-slate-900/60 backdrop-blur-md flex flex-col shrink-0 select-none transition-all duration-300 ${
         isCollapsed ? 'w-16' : 'w-64'
       }`}

@@ -29,7 +29,7 @@ import { Note, Tag, Attachment, HealthStatus, Stats, ViewFilter } from './types'
 import {
   MagnifyingGlass,
   Plus,
-  NotePencil,
+  NoteBlank,
   FolderDashed,
 } from '@phosphor-icons/react';
 
@@ -69,6 +69,34 @@ export function NotesAppContent() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(() => {
     return localStorage.getItem('notes_sidebar_collapsed') === 'true';
   });
+  const [notesColumnWidth, setNotesColumnWidth] = useState<number>(() => {
+    const saved = localStorage.getItem('notes_list_width');
+    return saved ? Math.max(260, Math.min(650, parseInt(saved, 10))) : 340;
+  });
+  const [isDraggingNotesColumn, setIsDraggingNotesColumn] = useState(false);
+
+  useEffect(() => {
+    if (!isDraggingNotesColumn) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const sidebarEl = document.getElementById('app-left-sidebar');
+      const sidebarWidth = sidebarEl ? sidebarEl.getBoundingClientRect().width : 0;
+      const newWidth = Math.max(260, Math.min(650, e.clientX - sidebarWidth));
+      setNotesColumnWidth(newWidth);
+      localStorage.setItem('notes_list_width', String(newWidth));
+    };
+
+    const handleMouseUp = () => {
+      setIsDraggingNotesColumn(false);
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDraggingNotesColumn]);
 
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
@@ -153,14 +181,10 @@ export function NotesAppContent() {
 
       setNotes(fetchedNotes);
 
-      // Handle note selection from URL or auto-select first note
+      // Handle note selection from URL: only select if urlNoteId is provided and exists
       if (currentView !== 'gallery') {
         if (urlNoteId && fetchedNotes.some((n) => n.id === urlNoteId)) {
           setSelectedNoteId(urlNoteId);
-        } else if (fetchedNotes.length > 0) {
-          const targetId = fetchedNotes[0].id;
-          setSelectedNoteId(targetId);
-          navigateToView(currentView, targetId);
         } else {
           setSelectedNoteId(null);
         }
@@ -180,9 +204,7 @@ export function NotesAppContent() {
 
   // Sync selectedNoteId when URL changes
   useEffect(() => {
-    if (urlNoteId) {
-      setSelectedNoteId(urlNoteId);
-    }
+    setSelectedNoteId(urlNoteId);
   }, [urlNoteId]);
 
   // Active note object
@@ -329,6 +351,10 @@ export function NotesAppContent() {
       <Header
         currentView={currentView}
         activeNoteTitle={currentView !== 'gallery' ? activeNote?.title : undefined}
+        onSelectView={(v) => {
+          setSelectedNoteId(null);
+          navigateToView(v, null);
+        }}
         onNewNote={handleNewNote}
         onOpenSearch={() => setIsCommandPaletteOpen(true)}
         onOpenStats={() => setIsStatsModalOpen(true)}
@@ -342,7 +368,10 @@ export function NotesAppContent() {
         {/* Left Sidebar */}
         <Sidebar
           currentView={currentView}
-          onSelectView={(v) => navigateToView(v)}
+          onSelectView={(v) => {
+            setSelectedNoteId(null);
+            navigateToView(v, null);
+          }}
           tags={tags}
           onCreateTag={handleCreateTag}
           onDeleteTag={(id) => {
@@ -364,7 +393,10 @@ export function NotesAppContent() {
         ) : (
           <div className="flex-1 flex overflow-hidden">
             {/* Note List Sub-Column */}
-            <div className="w-80 border-r border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 backdrop-blur-sm flex flex-col shrink-0">
+            <div
+              style={{ width: `${notesColumnWidth}px` }}
+              className="border-r border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70 backdrop-blur-sm flex flex-col shrink-0 relative select-none"
+            >
               {/* Search Bar in Note List */}
               <div className="p-3 border-b border-slate-200 dark:border-slate-800">
                 <div className="relative">
@@ -414,6 +446,22 @@ export function NotesAppContent() {
               </div>
             </div>
 
+            {/* Drag Resize Divider Handle */}
+            <div
+              onMouseDown={(e) => {
+                e.preventDefault();
+                setIsDraggingNotesColumn(true);
+              }}
+              className={`w-1 hover:w-1.5 transition-all cursor-col-resize shrink-0 select-none relative group z-20 ${
+                isDraggingNotesColumn
+                  ? 'bg-brand-500 w-1.5 shadow-sm'
+                  : 'bg-transparent hover:bg-brand-500/50'
+              }`}
+              title="Drag to resize sidebar width"
+            >
+              <div className="absolute inset-y-0 -left-1.5 -right-1.5 cursor-col-resize" />
+            </div>
+
             {/* Right Note Editor View */}
             {activeNote ? (
               <NoteEditor
@@ -428,21 +476,21 @@ export function NotesAppContent() {
                 onShowToast={addToast}
               />
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400 dark:text-slate-600 bg-slate-50/20 dark:bg-slate-950/20">
-                <div className="p-4 rounded-3xl bg-slate-100 dark:bg-slate-800/80 mb-3 text-brand-500">
-                  <NotePencil size={40} weight="duotone" />
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400 dark:text-slate-500 bg-slate-50/30 dark:bg-slate-950/30 select-none">
+                <div className="w-28 h-28 rounded-3xl bg-slate-100 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center mb-6 text-brand-500 shadow-sm">
+                  <NoteBlank size={72} weight="duotone" />
                 </div>
-                <h3 className="text-base font-semibold text-slate-700 dark:text-slate-300">
-                  Select or create a note
+                <h3 className="text-3xl font-bold text-slate-800 dark:text-slate-100 tracking-tight">
+                  Select a note to display
                 </h3>
-                <p className="text-xs text-slate-500 max-w-sm mt-1 mb-4">
-                  Write visually with rich formatting, paste screenshots directly at cursor, and manage attachments with S3.
+                <p className="text-base text-slate-500 dark:text-slate-400 max-w-md mt-2.5 mb-7 leading-relaxed">
+                  Choose a note from the sidebar list to view or edit, or create a new note to start writing.
                 </p>
                 <button
                   onClick={handleNewNote}
-                  className="px-4 py-2 rounded-xl bg-brand-500 hover:bg-brand-600 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm shadow-brand-500/20 transition-all hover:scale-[1.02]"
+                  className="px-6 py-3 rounded-2xl bg-brand-500 hover:bg-brand-600 text-white text-base font-semibold flex items-center gap-2.5 shadow-md shadow-brand-500/25 transition-all hover:scale-[1.03] active:scale-[0.98]"
                 >
-                  <Plus size={15} weight="bold" />
+                  <Plus size={18} weight="bold" />
                   <span>Create Note</span>
                 </button>
               </div>
@@ -468,7 +516,10 @@ export function NotesAppContent() {
           handleSelectNoteCard(note);
         }}
         onNewNote={handleNewNote}
-        onSelectView={(v) => navigateToView(v)}
+        onSelectView={(v) => {
+          setSelectedNoteId(null);
+          navigateToView(v, null);
+        }}
         onToggleTheme={toggleTheme}
         isDark={isDark}
       />

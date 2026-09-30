@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { WarningCircle, X } from '@phosphor-icons/react';
 
 interface ConfirmModalProps {
@@ -32,7 +33,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm"
       onClick={onCancel}
@@ -91,6 +92,7 @@ export const ConfirmModal: React.FC<ConfirmModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

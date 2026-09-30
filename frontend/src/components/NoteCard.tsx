@@ -7,6 +7,7 @@ import {
   Image as ImageIcon,
 } from '@phosphor-icons/react';
 import { Note } from '../types';
+import { parseLocalTime } from './MediaGallery';
 
 interface NoteCardProps {
   note: Note;
@@ -49,7 +50,8 @@ function getCleanSnippet(content?: string): string {
 function formatShortTime(dateStr?: string | Date): string {
   if (!dateStr) return '';
   try {
-    const d = new Date(dateStr);
+    const d = parseLocalTime(dateStr);
+    if (!d) return '';
     const now = new Date();
     const diffMs = now.getTime() - d.getTime();
     if (diffMs < 60000 && diffMs >= 0) return 'Just now';
@@ -76,22 +78,24 @@ export const NoteCard: React.FC<NoteCardProps> = ({
   onDelete,
 }) => {
   const snippetText = getCleanSnippet(note.content);
-  const timeStr = formatShortTime(note.updatedAt);
-  const imageCount = note.attachments?.length || 0;
+  const timeStr = formatShortTime(note.updatedAt || note.createdAt);
+  const mdImagesCount = (note.content?.match(/!\[.*?\]\(.*?\)|<img[^>]+>/gi) || []).length;
+  const dbImagesCount = note.attachments?.length || 0;
+  const imageCount = Math.max(dbImagesCount, mdImagesCount);
   const firstTag = note.tags && note.tags.length > 0 ? note.tags[0] : null;
 
   return (
     <div
       onClick={onSelect}
-      className={`group relative px-3 py-2.5 rounded-xl border transition-all cursor-pointer select-none ${
+      className={`group relative p-3 rounded-xl border transition-all cursor-pointer select-none flex flex-col gap-1.5 ${
         isSelected
-          ? 'bg-brand-50/90 dark:bg-brand-950/50 border-brand-500 shadow-sm shadow-brand-500/10'
+          ? 'bg-brand-50 dark:bg-brand-950/60 border-brand-500'
           : 'bg-white dark:bg-slate-900 border-slate-200/90 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 shadow-sm'
       }`}
     >
-      {/* Line 1: Title + Pin + Metadata & Hover Actions */}
-      <div className="flex items-center justify-between gap-2 mb-1">
-        <h3 className="text-xs font-semibold text-slate-900 dark:text-slate-100 truncate flex items-center gap-1.5 flex-1 min-w-0">
+      {/* Row 1: Title + Direct Action Controls */}
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate flex items-center gap-1.5 flex-1 min-w-0 tracking-tight">
           {note.isPinned && (
             <PushPin
               size={12}
@@ -102,76 +106,76 @@ export const NoteCard: React.FC<NoteCardProps> = ({
           <span className="truncate">{note.title || 'Untitled Note'}</span>
         </h3>
 
-        {/* Right side: Image count & Time (or hover action buttons) */}
-        <div className="flex items-center gap-1.5 shrink-0 h-4">
+        {/* Direct Action Controls */}
+        <div className="flex items-center gap-0.5 shrink-0">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onTogglePin(e);
+            }}
+            className={`p-1 rounded-md hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors ${
+              note.isPinned ? 'text-amber-500' : 'text-slate-400 hover:text-amber-500'
+            }`}
+            title={note.isPinned ? 'Unpin note' : 'Pin note'}
+          >
+            <PushPin size={13} weight={note.isPinned ? 'fill' : 'regular'} />
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleArchive(e);
+            }}
+            className="p-1 rounded-md text-slate-400 hover:text-brand-500 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors"
+            title={note.isArchived ? 'Restore note' : 'Archive note'}
+          >
+            {note.isArchived ? (
+              <ArrowCounterClockwise size={13} />
+            ) : (
+              <Archive size={13} />
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(e);
+            }}
+            className="p-1 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition-colors"
+            title="Delete note"
+          >
+            <Trash size={13} />
+          </button>
+        </div>
+      </div>
+
+      {/* Row 2: Full-width 1-line content snippet preview */}
+      <p className="text-xs text-slate-500 dark:text-slate-400 truncate leading-relaxed font-normal">
+        {snippetText || 'No content'}
+      </p>
+
+      {/* Row 3: Metadata Footer (Tags, Image Counter, Timestamp) */}
+      <div className="flex items-center justify-between gap-2 text-[11px] text-slate-400 dark:text-slate-500">
+        <div className="flex items-center gap-1.5 min-w-0">
+          {firstTag && (
+            <span className="px-1.5 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9.5px] font-medium shrink-0 truncate max-w-[120px]">
+              #{firstTag.name}
+            </span>
+          )}
+
           {imageCount > 0 && (
-            <span className="flex items-center gap-0.5 text-brand-600 dark:text-brand-400 text-[10px] font-medium">
+            <span className="inline-flex items-center gap-1 text-brand-600 dark:text-brand-400 text-[10px] font-medium bg-brand-50 dark:bg-brand-950/60 px-1.5 py-0.2 rounded">
               <ImageIcon size={11} weight="bold" />
               <span>{imageCount}</span>
             </span>
           )}
-
-          {/* Normal: Relative Time */}
-          <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono group-hover:hidden">
-            {timeStr}
-          </span>
-
-          {/* Hover: Quick Action Buttons */}
-          <div className="hidden group-hover:flex items-center gap-0.5">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onTogglePin(e);
-              }}
-              className={`p-0.5 rounded hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors ${
-                note.isPinned ? 'text-amber-500' : 'text-slate-400 hover:text-amber-500'
-              }`}
-              title={note.isPinned ? 'Unpin note' : 'Pin note'}
-            >
-              <PushPin size={12} weight={note.isPinned ? 'fill' : 'regular'} />
-            </button>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onToggleArchive(e);
-              }}
-              className="p-0.5 rounded text-slate-400 hover:text-brand-500 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors"
-              title={note.isArchived ? 'Restore note' : 'Archive note'}
-            >
-              {note.isArchived ? (
-                <ArrowCounterClockwise size={12} />
-              ) : (
-                <Archive size={12} />
-              )}
-            </button>
-
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(e);
-              }}
-              className="p-0.5 rounded text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition-colors"
-              title="Delete note"
-            >
-              <Trash size={12} />
-            </button>
-          </div>
         </div>
-      </div>
 
-      {/* Line 2: Tag + Single-Line Clean Snippet Preview */}
-      <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 truncate">
-        {firstTag && (
-          <span className="px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[9.5px] font-medium shrink-0">
-            #{firstTag.name}
-          </span>
-        )}
-        <span className="truncate text-slate-500 dark:text-slate-400 font-normal">
-          {snippetText || 'No additional text'}
+        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono shrink-0 ml-auto">
+          {timeStr}
         </span>
       </div>
     </div>

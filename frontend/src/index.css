@@ -76,8 +76,10 @@
 /* TipTap WYSIWYG Visual Editor Styling */
 .ProseMirror {
   outline: none !important;
-  min-height: 400px;
+  min-height: 100%;
+  flex: 1 1 auto;
   line-height: 1.6;
+  cursor: text;
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {
@@ -104,32 +106,48 @@
   @apply my-1.5 leading-relaxed text-slate-700 dark:text-slate-300 text-sm;
 }
 
-.ProseMirror ul {
-  @apply list-disc list-inside my-1.5 space-y-0.5 text-slate-700 dark:text-slate-300 text-sm;
+.ProseMirror ul:not([data-type="taskList"]) {
+  @apply list-disc list-outside pl-6 my-2 space-y-1 text-slate-700 dark:text-slate-300 text-sm;
 }
 
 .ProseMirror ol {
-  @apply list-decimal list-inside my-1.5 space-y-0.5 text-slate-700 dark:text-slate-300 text-sm;
+  @apply list-decimal list-outside pl-6 my-2 space-y-1 text-slate-700 dark:text-slate-300 text-sm;
+}
+
+.ProseMirror li {
+  @apply my-0.5;
+}
+
+.ProseMirror li > p {
+  @apply my-0 leading-relaxed;
 }
 
 .ProseMirror ul[data-type="taskList"] {
-  @apply list-none p-0 my-1.5 space-y-1;
+  @apply list-none p-0 my-2 space-y-1.5;
 }
 
 .ProseMirror ul[data-type="taskList"] li {
-  @apply flex items-center gap-2 text-sm leading-normal text-slate-700 dark:text-slate-300;
+  @apply flex items-start gap-2.5 text-sm leading-relaxed text-slate-700 dark:text-slate-300;
 }
 
 .ProseMirror ul[data-type="taskList"] li label {
-  @apply select-none cursor-pointer flex items-center;
+  @apply select-none cursor-pointer flex items-center shrink-0 mt-1;
 }
 
 .ProseMirror ul[data-type="taskList"] li input[type="checkbox"] {
-  @apply rounded text-brand-500 focus:ring-brand-400 accent-brand-500 cursor-pointer w-3.5 h-3.5;
+  @apply rounded text-brand-500 focus:ring-brand-400 accent-brand-500 cursor-pointer w-4 h-4;
 }
 
 .ProseMirror ul[data-type="taskList"] li > div {
   @apply flex-1 min-w-0;
+}
+
+.ProseMirror ul[data-type="taskList"] li > div > p {
+  @apply my-0 leading-relaxed;
+}
+
+.ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div {
+  @apply line-through text-slate-400 dark:text-slate-500;
 }
 
 .ProseMirror blockquote {
@@ -165,11 +183,38 @@
 .markdown-body p {
   @apply mb-3 leading-relaxed text-slate-700 dark:text-slate-300;
 }
-.markdown-body ul {
-  @apply list-disc list-inside mb-3 space-y-1 text-slate-700 dark:text-slate-300;
+.markdown-body ul:not([data-type="taskList"]) {
+  @apply list-disc list-outside pl-6 mb-3 space-y-1 text-slate-700 dark:text-slate-300;
 }
 .markdown-body ol {
-  @apply list-decimal list-inside mb-3 space-y-1 text-slate-700 dark:text-slate-300;
+  @apply list-decimal list-outside pl-6 mb-3 space-y-1 text-slate-700 dark:text-slate-300;
+}
+.markdown-body li {
+  @apply my-0.5;
+}
+.markdown-body li > p {
+  @apply my-0 leading-relaxed;
+}
+.markdown-body ul[data-type="taskList"] {
+  @apply list-none p-0 mb-3 space-y-1.5;
+}
+.markdown-body ul[data-type="taskList"] li {
+  @apply flex items-start gap-2.5 text-sm leading-relaxed text-slate-700 dark:text-slate-300;
+}
+.markdown-body ul[data-type="taskList"] li label {
+  @apply select-none cursor-pointer flex items-center shrink-0 mt-1;
+}
+.markdown-body ul[data-type="taskList"] li input[type="checkbox"] {
+  @apply rounded text-brand-500 focus:ring-brand-400 accent-brand-500 cursor-pointer w-4 h-4;
+}
+.markdown-body ul[data-type="taskList"] li > div {
+  @apply flex-1 min-w-0;
+}
+.markdown-body ul[data-type="taskList"] li > div > p {
+  @apply my-0 leading-relaxed;
+}
+.markdown-body ul[data-type="taskList"] li[data-checked="true"] > div {
+  @apply line-through text-slate-400 dark:text-slate-500;
 }
 .markdown-body blockquote {
   @apply pl-4 border-l-4 border-brand-500 my-3 italic text-slate-600 dark:text-slate-400 bg-slate-100/50 dark:bg-slate-900/50 py-1.5 rounded-r-md;

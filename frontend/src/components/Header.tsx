@@ -15,6 +15,7 @@ import { HealthStatus, ViewFilter } from '../types';
 interface HeaderProps {
   currentView: ViewFilter;
   activeNoteTitle?: string;
+  onSelectView?: (view: ViewFilter) => void;
   onNewNote: () => void;
   onOpenSearch: () => void;
   onOpenStats: () => void;
@@ -26,6 +27,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({
   currentView,
   activeNoteTitle,
+  onSelectView,
   onNewNote,
   onOpenSearch,
   onOpenStats,
@@ -49,17 +51,25 @@ export const Header: React.FC<HeaderProps> = ({
     <header className="h-16 px-6 flex items-center justify-between glass-panel z-20 shadow-sm shrink-0 transition-colors duration-200">
       {/* Left: Brand & Breadcrumbs */}
       <div className="flex-1 flex items-center gap-3 min-w-0">
-        <div className="flex items-center gap-2.5 text-brand-900 dark:text-white shrink-0 cursor-pointer">
+        <button
+          onClick={() => onSelectView?.('all')}
+          className="flex items-center gap-2.5 text-brand-900 dark:text-white shrink-0 hover:opacity-80 transition-opacity text-left"
+          title="Go to All Notes"
+        >
           <img src="/favicon.svg" alt="Notes Logo" className="w-6 h-6 shrink-0" />
           <h1 className="text-lg font-semibold tracking-tight hidden lg:block">Notes App</h1>
-        </div>
+        </button>
 
         {/* Breadcrumb Navigation */}
         <nav className="flex items-center gap-1.5 min-w-0 text-sm overflow-x-auto scrollbar-none py-1 ml-2">
           <CaretRight size={12} weight="bold" className="text-slate-400 dark:text-slate-600 shrink-0" />
-          <span className="px-2 py-1 rounded-md text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors shrink-0 whitespace-nowrap font-medium cursor-default">
+          <button
+            onClick={() => onSelectView?.(currentView)}
+            className="px-2 py-1 rounded-md text-slate-600 dark:text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 hover:bg-slate-200/70 dark:hover:bg-slate-800 transition-colors shrink-0 whitespace-nowrap font-medium cursor-pointer"
+            title={`View ${getViewLabel()}`}
+          >
             {getViewLabel()}
-          </span>
+          </button>
 
           {activeNoteTitle && (
             <>

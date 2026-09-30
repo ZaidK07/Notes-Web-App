@@ -35,6 +35,7 @@ import {
 } from '@phosphor-icons/react';
 import { Note, Tag, Attachment } from '../types';
 import { uploadAttachment } from '../services/api';
+import { LinkModal } from './LinkModal';
 
 interface NoteEditorProps {
   note: Note;
@@ -146,6 +147,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const [rawContent, setRawContent] = useState(note.content || '');
   const [isUploading, setIsUploading] = useState(false);
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'dirty'>('saved');
+  const [isLinkModalOpen, setIsLinkModalOpen] = useState(false);
+  const [linkModalUrl, setLinkModalUrl] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -273,7 +276,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     editorProps: {
       attributes: {
         class:
-          'prose dark:prose-invert max-w-none focus:outline-none min-h-[400px] text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm',
+          'focus:outline-none min-h-full flex-1 text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm cursor-text',
       },
       handleDOMEvents: {
         // Catch paste events for image screenshots at cursor position
@@ -399,6 +402,50 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           }
         }
       }
+    }
+  };
+
+  // Link modal open/save/remove handlers
+  const handleOpenLinkModal = () => {
+    if (!editor) return;
+    const previousUrl = editor.getAttributes('link').href || '';
+    setLinkModalUrl(previousUrl);
+    setIsLinkModalOpen(true);
+  };
+
+  const handleSaveLink = (url: string) => {
+    if (!editor) return;
+    if (!url) {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    } else {
+      editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    }
+  };
+
+  const handleRemoveLink = () => {
+    if (!editor) return;
+    editor.chain().focus().extendMarkRange('link').unsetLink().run();
+  };
+
+  // Click handler to move cursor to the bottom when clicking anywhere in empty editor space
+  const handleEditorContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const target = e.target as HTMLElement;
+    // Don't interfere with button clicks, link clicks, checkbox toggles, or image chip interactions
+    if (target.closest('button, a, input, label, [data-node-view-wrapper]')) {
+      return;
+    }
+
+    if (!isRawMode && editor) {
+      // If clicking outside an active text line (e.g. in the vast empty bottom area)
+      const isDirectTextNode = target.closest('p, h1, h2, h3, li, blockquote, pre, code');
+      if (!isDirectTextNode || target === e.currentTarget) {
+        editor.chain().focus('end').run();
+      }
+    } else if (isRawMode && rawTextareaRef.current) {
+      const textarea = rawTextareaRef.current;
+      textarea.focus();
+      const len = textarea.value.length;
+      textarea.setSelectionRange(len, len);
     }
   };
 
@@ -672,18 +719,13 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </button>
 
           <button
-            onClick={() => {
-              const url = window.prompt('Enter link URL:');
-              if (url) {
-                editor.chain().focus().setLink({ href: url }).run();
-              }
-            }}
+            onClick={handleOpenLinkModal}
             className={`p-1.5 rounded-lg transition-colors ${
               editor.isActive('link')
                 ? 'bg-brand-500 text-white'
                 : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
             }`}
-            title="Insert Link"
+            title="Insert or Edit Link (⌘K)"
           >
             <Link size={15} />
           </button>
@@ -708,7 +750,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
       )}
 
       {/* Editor Body */}
-      <div className="flex-1 overflow-y-auto p-6">
+      <div
+        className="flex-1 overflow-y-auto p-6 cursor-text flex flex-col"
+        onClick={handleEditorContainerClick}
+      >
         {isRawMode ? (
           <textarea
             ref={rawTextareaRef}
@@ -716,14 +761,26 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             onChange={handleRawContentChange}
             onPaste={handleRawPaste}
             placeholder="Write raw Markdown here... (⌘V pastes images at cursor position)"
-            className="w-full h-full min-h-[500px] bg-transparent border-none resize-none text-slate-800 dark:text-slate-200 font-mono text-sm leading-relaxed focus:outline-none placeholder-slate-400"
+            className="w-full flex-1 min-h-full bg-transparent border-none resize-none text-slate-800 dark:text-slate-200 font-mono text-sm leading-relaxed focus:outline-none placeholder-slate-400 cursor-text"
           />
         ) : (
-          <div className="h-full">
-            <EditorContent editor={editor} />
+          <div
+            className="flex-1 flex flex-col min-h-full cursor-text"
+            onClick={handleEditorContainerClick}
+          >
+            <EditorContent editor={editor} className="flex-1 flex flex-col min-h-full cursor-text" />
           </div>
         )}
       </div>
+
+      {/* Custom Link Modal */}
+      <LinkModal
+        isOpen={isLinkModalOpen}
+        initialUrl={linkModalUrl}
+        onSave={handleSaveLink}
+        onRemove={handleRemoveLink}
+        onClose={() => setIsLinkModalOpen(false)}
+      />
     </div>
   );
 };

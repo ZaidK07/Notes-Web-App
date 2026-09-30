@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   ChartBar,
@@ -73,7 +74,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
     },
   ];
 
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm"
       onClick={onClose}
@@ -165,6 +166,7 @@ export const StatsModal: React.FC<StatsModalProps> = ({
           })}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
