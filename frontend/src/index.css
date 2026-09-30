@@ -1,0 +1,203 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    box-sizing: border-box;
+  }
+}
+
+/* Glass panel style matching Web Database Viewer */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid #cbd5e1;
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid #e2e8f0;
+}
+
+.dark .glass-card {
+  background: rgba(30, 41, 59, 0.7);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Custom Webkit Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* TipTap WYSIWYG Visual Editor Styling */
+.ProseMirror {
+  outline: none !important;
+  min-height: 400px;
+  line-height: 1.6;
+}
+
+.ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #94a3b8;
+  pointer-events: none;
+  height: 0;
+}
+
+.ProseMirror h1 {
+  @apply text-xl font-bold mt-4 mb-2 text-slate-900 dark:text-slate-50 leading-tight;
+}
+
+.ProseMirror h2 {
+  @apply text-lg font-semibold mt-3.5 mb-1.5 text-slate-900 dark:text-slate-100 leading-tight;
+}
+
+.ProseMirror h3 {
+  @apply text-base font-semibold mt-3 mb-1 text-slate-800 dark:text-slate-200 leading-snug;
+}
+
+.ProseMirror p {
+  @apply my-1.5 leading-relaxed text-slate-700 dark:text-slate-300 text-sm;
+}
+
+.ProseMirror ul {
+  @apply list-disc list-inside my-1.5 space-y-0.5 text-slate-700 dark:text-slate-300 text-sm;
+}
+
+.ProseMirror ol {
+  @apply list-decimal list-inside my-1.5 space-y-0.5 text-slate-700 dark:text-slate-300 text-sm;
+}
+
+.ProseMirror ul[data-type="taskList"] {
+  @apply list-none p-0 my-1.5 space-y-1;
+}
+
+.ProseMirror ul[data-type="taskList"] li {
+  @apply flex items-center gap-2 text-sm leading-normal text-slate-700 dark:text-slate-300;
+}
+
+.ProseMirror ul[data-type="taskList"] li label {
+  @apply select-none cursor-pointer flex items-center;
+}
+
+.ProseMirror ul[data-type="taskList"] li input[type="checkbox"] {
+  @apply rounded text-brand-500 focus:ring-brand-400 accent-brand-500 cursor-pointer w-3.5 h-3.5;
+}
+
+.ProseMirror ul[data-type="taskList"] li > div {
+  @apply flex-1 min-w-0;
+}
+
+.ProseMirror blockquote {
+  @apply pl-3.5 border-l-2 border-brand-500 my-2 italic text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/30 py-1 rounded-r-md text-sm;
+}
+
+.ProseMirror code {
+  @apply font-mono text-xs px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-brand-700 dark:text-brand-300;
+}
+
+.ProseMirror pre {
+  @apply p-3 rounded-xl bg-slate-900 text-slate-100 text-sm overflow-x-auto my-2 border border-slate-800 font-mono;
+}
+
+.ProseMirror pre code {
+  @apply p-0 bg-transparent text-slate-100 text-xs;
+}
+
+.ProseMirror img {
+  @apply rounded-xl max-w-full my-2 border border-slate-200 dark:border-slate-800 shadow-sm cursor-pointer;
+}
+
+/* Markdown preview typography styling */
+.markdown-body h1 {
+  @apply text-2xl font-bold mt-4 mb-2 pb-1 border-b border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-50;
+}
+.markdown-body h2 {
+  @apply text-xl font-semibold mt-3 mb-2 pb-1 border-b border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100;
+}
+.markdown-body h3 {
+  @apply text-lg font-semibold mt-3 mb-1 text-slate-800 dark:text-slate-200;
+}
+.markdown-body p {
+  @apply mb-3 leading-relaxed text-slate-700 dark:text-slate-300;
+}
+.markdown-body ul {
+  @apply list-disc list-inside mb-3 space-y-1 text-slate-700 dark:text-slate-300;
+}
+.markdown-body ol {
+  @apply list-decimal list-inside mb-3 space-y-1 text-slate-700 dark:text-slate-300;
+}
+.markdown-body blockquote {
+  @apply pl-4 border-l-4 border-brand-500 my-3 italic text-slate-600 dark:text-slate-400 bg-slate-100/50 dark:bg-slate-900/50 py-1.5 rounded-r-md;
+}
+.markdown-body pre {
+  @apply p-3.5 rounded-xl bg-slate-900 text-slate-100 text-sm overflow-x-auto my-3 border border-slate-800 font-mono;
+}
+.markdown-body code {
+  @apply font-mono text-xs px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-brand-700 dark:text-brand-300;
+}
+.markdown-body pre code {
+  @apply p-0 bg-transparent text-slate-100 text-xs;
+}
+.markdown-body img {
+  @apply max-w-full rounded-2xl my-3 shadow-md border border-slate-200 dark:border-slate-800 cursor-pointer hover:opacity-95 transition-opacity;
+}
+.markdown-body a {
+  @apply text-brand-600 dark:text-brand-400 underline hover:text-brand-700 dark:hover:text-brand-300;
+}
+.markdown-body hr {
+  @apply my-4 border-slate-200 dark:border-slate-800;
+}
+.markdown-body table {
+  @apply w-full my-3 border-collapse text-sm;
+}
+.markdown-body th {
+  @apply bg-slate-100 dark:bg-slate-800/80 p-2 text-left font-semibold border border-slate-200 dark:border-slate-700;
+}
+.markdown-body td {
+  @apply p-2 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300;
+}

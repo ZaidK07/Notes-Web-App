@@ -1,0 +1,31 @@
+{
+  "name": "notes-web-app",
+  "version": "1.0.0",
+  "description": "A modern, lightweight, privacy-focused note-taking web app with Backblaze B2 S3 image attachments and MySQL storage.",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspaces",
+    "dev:backend": "npm run dev --workspace=backend",
+    "dev:frontend": "npm run dev --workspace=frontend",
+    "build": "npm run build --workspaces",
+    "test": "npm run test --workspaces"
+  },
+  "keywords": [
+    "notes",
+    "fastify",
+    "react",
+    "vite",
+    "typescript",
+    "mysql",
+    "drizzle-orm",
+    "backblaze",
+    "s3",
+    "tailwind"
+  ],
+  "author": "",
+  "license": "MIT"
+}
