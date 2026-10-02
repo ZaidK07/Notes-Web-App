@@ -246,6 +246,8 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     }
   };
 
+  const [, setEditorStateVersion] = useState(0);
+
   // TipTap Visual Editor Configuration
   const editor = useEditor({
     extensions: [
@@ -258,9 +260,16 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           class: 'text-brand-500 underline cursor-pointer hover:text-brand-600',
         },
       }),
-      TaskList,
+      TaskList.configure({
+        HTMLAttributes: {
+          class: 'task-list-group',
+        },
+      }),
       TaskItem.configure({
         nested: true,
+        HTMLAttributes: {
+          class: 'task-list-item',
+        },
       }),
       CustomImageExtension.configure({
         inline: true,
@@ -297,6 +306,14 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           return false;
         },
       },
+    },
+    onSelectionUpdate: () => {
+      // Instantly synchronize toolbar active states whenever cursor moves
+      setEditorStateVersion((v) => (v + 1) % 10000);
+    },
+    onTransaction: () => {
+      // Ensure instantaneous UI reactivity on any document transformation
+      setEditorStateVersion((v) => (v + 1) % 10000);
     },
     onUpdate: ({ editor: ed }) => {
       const markdownOutput = getEditorMarkdown(ed);
