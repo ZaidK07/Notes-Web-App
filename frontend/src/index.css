@@ -231,16 +231,40 @@
   @apply pl-3.5 border-l-2 border-brand-500 my-2 italic text-slate-600 dark:text-slate-400 bg-slate-50/50 dark:bg-slate-900/30 py-1 rounded-r-md text-sm;
 }
 
-.ProseMirror code {
+.ProseMirror :not(pre) > code {
   @apply font-mono text-xs px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-brand-700 dark:text-brand-300;
 }
 
-.ProseMirror pre {
-  @apply p-3 rounded-xl bg-slate-900 text-slate-100 text-sm overflow-x-auto my-2 border border-slate-800 font-mono;
+/* Code blocks share geometry and use explicit light and dark palettes. */
+.ProseMirror pre,
+.markdown-body pre {
+  @apply rounded-lg border border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200;
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  min-width: 0;
+  align-self: flex-start;
+  margin: 0.75rem 0;
+  padding: 1rem;
+  overflow-x: auto;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.8125rem;
+  line-height: 1.6;
+  white-space: pre;
+  word-break: normal;
+  overflow-wrap: normal;
+  tab-size: 4;
 }
 
-.ProseMirror pre code {
-  @apply p-0 bg-transparent text-slate-100 text-xs;
+.ProseMirror pre code,
+.markdown-body pre code {
+  display: block;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  white-space: inherit;
 }
 
 .ProseMirror img {
@@ -332,14 +356,8 @@
 .markdown-body blockquote {
   @apply pl-4 border-l-4 border-brand-500 my-3 italic text-slate-600 dark:text-slate-400 bg-slate-100/50 dark:bg-slate-900/50 py-1.5 rounded-r-md;
 }
-.markdown-body pre {
-  @apply p-3.5 rounded-xl bg-slate-900 text-slate-100 text-sm overflow-x-auto my-3 border border-slate-800 font-mono;
-}
-.markdown-body code {
+.markdown-body :not(pre) > code {
   @apply font-mono text-xs px-1.5 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-brand-700 dark:text-brand-300;
-}
-.markdown-body pre code {
-  @apply p-0 bg-transparent text-slate-100 text-xs;
 }
 .markdown-body img {
   @apply max-w-full rounded-2xl my-3 shadow-md border border-slate-200 dark:border-slate-800 cursor-pointer hover:opacity-95 transition-opacity;

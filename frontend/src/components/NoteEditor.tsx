@@ -652,184 +652,66 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
 
       {/* Formatting Toolbar (Available in Visual Editor) */}
       {!isRawMode && editor && (
-        <div className="px-6 py-2 border-b border-slate-200/80 dark:border-slate-800 flex items-center gap-1 flex-wrap bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
+        <div
+          role="toolbar"
+          aria-label="Note formatting"
+          className="flex shrink-0 items-center gap-3 overflow-x-auto border-b border-slate-200/80 bg-slate-50/80 px-8 py-2.5 dark:border-slate-800 dark:bg-slate-900/60"
+          onMouseDown={(event) => event.preventDefault()}
+        >
+          {[
+            { label: 'Text style', tools: [
+              { label: 'Bold (⌘B / Ctrl+B)', Icon: TextB, active: editor.isActive('bold'), action: () => editor.chain().focus().toggleBold().run() },
+              { label: 'Italic (⌘I / Ctrl+I)', Icon: TextItalic, active: editor.isActive('italic'), action: () => editor.chain().focus().toggleItalic().run() },
+              { label: 'Strikethrough', Icon: TextStrikethrough, active: editor.isActive('strike'), action: () => editor.chain().focus().toggleStrike().run() },
+            ] },
+            { label: 'Headings', tools: [
+              { label: 'Heading 1', Icon: TextHOne, active: editor.isActive('heading', { level: 1 }), action: () => editor.chain().focus().toggleHeading({ level: 1 }).run() },
+              { label: 'Heading 2', Icon: TextHTwo, active: editor.isActive('heading', { level: 2 }), action: () => editor.chain().focus().toggleHeading({ level: 2 }).run() },
+              { label: 'Heading 3', Icon: TextHThree, active: editor.isActive('heading', { level: 3 }), action: () => editor.chain().focus().toggleHeading({ level: 3 }).run() },
+            ] },
+            { label: 'Lists', tools: [
+              { label: 'Bullet list', Icon: ListBullets, active: editor.isActive('bulletList'), action: () => editor.chain().focus().toggleBulletList().run() },
+              { label: 'Numbered list', Icon: ListNumbers, active: editor.isActive('orderedList'), action: () => editor.chain().focus().toggleOrderedList().run() },
+              { label: 'Task checklist', Icon: CheckSquare, active: editor.isActive('taskList'), action: () => editor.chain().focus().toggleTaskList().run() },
+            ] },
+            { label: 'Blocks and links', tools: [
+              { label: 'Inline code', Icon: Code, active: editor.isActive('code'), action: () => editor.chain().focus().toggleCode().run() },
+              { label: 'Code block', Icon: CodeBlock, active: editor.isActive('codeBlock'), action: () => editor.chain().focus().toggleCodeBlock().run() },
+              { label: 'Blockquote', Icon: Quotes, active: editor.isActive('blockquote'), action: () => editor.chain().focus().toggleBlockquote().run() },
+              { label: 'Insert or edit link', Icon: Link, active: editor.isActive('link'), action: handleOpenLinkModal },
+            ] },
+          ].map(({ label, tools }, index) => (
+            <React.Fragment key={label}>
+              {index > 0 && <span aria-hidden="true" className="h-5 w-px shrink-0 bg-slate-200 dark:bg-slate-700/70" />}
+              <div role="group" aria-label={label} className="flex shrink-0 items-center gap-0.5">
+                {tools.map(({ label: toolLabel, Icon, active, action }) => (
+                  <button
+                    key={toolLabel}
+                    type="button"
+                    onClick={action}
+                    title={toolLabel}
+                    aria-label={toolLabel}
+                    aria-pressed={active}
+                    className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 ${active
+                      ? 'bg-brand-100 text-brand-700 dark:bg-brand-500/15 dark:text-brand-300'
+                      : 'text-slate-500 hover:bg-slate-200/70 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-100'}`}
+                  >
+                    <Icon size={17} weight="regular" />
+                  </button>
+                ))}
+              </div>
+            </React.Fragment>
+          ))}
+          <span aria-hidden="true" className="h-5 w-px shrink-0 bg-slate-200 dark:bg-slate-700/70" />
           <button
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('bold')
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Bold (⌘B)"
-          >
-            <TextB size={15} weight="bold" />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('italic')
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Italic (⌘I)"
-          >
-            <TextItalic size={15} />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('strike')
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Strikethrough"
-          >
-            <TextStrikethrough size={15} />
-          </button>
-
-          <div className="w-[1px] h-4 bg-slate-300 dark:bg-slate-700 mx-1" />
-
-          <button
-            onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('heading', { level: 1 })
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Heading 1"
-          >
-            <TextHOne size={15} weight="bold" />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('heading', { level: 2 })
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Heading 2"
-          >
-            <TextHTwo size={15} weight="bold" />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('heading', { level: 3 })
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Heading 3"
-          >
-            <TextHThree size={15} weight="bold" />
-          </button>
-
-          <div className="w-[1px] h-4 bg-slate-300 dark:bg-slate-700 mx-1" />
-
-          <button
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('bulletList')
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Bullet List"
-          >
-            <ListBullets size={15} />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('orderedList')
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Numbered List"
-          >
-            <ListNumbers size={15} />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleTaskList().run()}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('taskList')
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Task Checklist"
-          >
-            <CheckSquare size={15} />
-          </button>
-
-          <div className="w-[1px] h-4 bg-slate-300 dark:bg-slate-700 mx-1" />
-
-          <button
-            onClick={() => editor.chain().focus().toggleCode().run()}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('code')
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Inline Code"
-          >
-            <Code size={15} />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('codeBlock')
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Code Block"
-          >
-            <CodeBlock size={15} />
-          </button>
-
-          <button
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('blockquote')
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Blockquote"
-          >
-            <Quotes size={15} />
-          </button>
-
-          <button
-            onClick={handleOpenLinkModal}
-            className={`p-1.5 rounded-lg transition-colors ${
-              editor.isActive('link')
-                ? 'bg-brand-500 text-white'
-                : 'hover:bg-slate-200/80 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
-            }`}
-            title="Insert or Edit Link (⌘K)"
-          >
-            <Link size={15} />
-          </button>
-
-          <div className="w-[1px] h-4 bg-slate-300 dark:bg-slate-700 mx-1" />
-
-          {/* Insert Image at Cursor */}
-          <button
+            type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
-            className="px-2.5 py-1 rounded-lg bg-brand-50 dark:bg-brand-950/60 hover:bg-brand-100 dark:hover:bg-brand-900 border border-brand-200 dark:border-brand-800 text-brand-700 dark:text-brand-300 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-            title="Insert image at cursor position (or paste directly with ⌘V)"
+            className="flex h-8 shrink-0 items-center gap-2 rounded-md px-2.5 text-xs font-medium text-slate-600 transition-colors hover:bg-slate-200/70 hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 disabled:cursor-wait disabled:opacity-50 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            title="Insert image at cursor position (or paste directly with ⌘V / Ctrl+V)"
           >
-            {isUploading ? (
-              <CircleNotch size={14} className="animate-spin" />
-            ) : (
-              <ImageIcon size={14} weight="bold" />
-            )}
-            <span>Insert Image</span>
+            {isUploading ? <CircleNotch size={17} className="animate-spin" /> : <ImageIcon size={17} />}
+            <span>{isUploading ? 'Uploading…' : 'Insert image'}</span>
           </button>
         </div>
       )}
