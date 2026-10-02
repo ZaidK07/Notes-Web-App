@@ -82,7 +82,8 @@ export function NotesAppContent() {
     const handleMouseMove = (e: MouseEvent) => {
       const sidebarEl = document.getElementById('app-left-sidebar');
       const sidebarWidth = sidebarEl ? sidebarEl.getBoundingClientRect().width : 0;
-      const newWidth = Math.max(260, Math.min(650, e.clientX - sidebarWidth));
+      const uiScale = sidebarEl && sidebarEl.offsetWidth ? sidebarWidth / sidebarEl.offsetWidth : 1;
+      const newWidth = Math.max(260, Math.min(650, (e.clientX - sidebarWidth) / uiScale));
       setNotesColumnWidth(newWidth);
       localStorage.setItem('notes_list_width', String(newWidth));
     };
@@ -374,7 +375,7 @@ export function NotesAppContent() {
   };
 
   return (
-    <div className="h-screen w-screen overflow-hidden flex flex-col font-sans transition-colors duration-200 bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
+    <div className="app-viewport overflow-hidden flex flex-col font-sans transition-colors duration-200 bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100">
       {/* Top Navbar */}
       <Header
         currentView={currentView}

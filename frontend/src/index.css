@@ -3,9 +3,20 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --app-scale: 1.1;
+    zoom: var(--app-scale);
+  }
+
   * {
     box-sizing: border-box;
   }
+}
+
+/* Compensate viewport dimensions so the enlarged UI still fits the window. */
+.app-viewport {
+  width: calc(100vw / var(--app-scale));
+  height: calc(100dvh / var(--app-scale));
 }
 
 /* Glass panel style matching Web Database Viewer */
