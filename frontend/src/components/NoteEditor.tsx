@@ -55,15 +55,18 @@ function getEditorMarkdown(ed: any): string {
 const ImageChipNodeView: React.FC<any> = ({ node, deleteNode, selected }) => {
   const { src, alt, title } = node.attrs;
   const displayName = alt || title || 'Attached Image';
+  const isPendingUpload = src && src.startsWith('blob:');
 
   const handleClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    window.dispatchEvent(
-      new CustomEvent('open-image-preview', {
-        detail: { src, alt: displayName },
-      })
-    );
+    if (!isPendingUpload) {
+      window.dispatchEvent(
+        new CustomEvent('open-image-preview', {
+          detail: { src, alt: displayName },
+        })
+      );
+    }
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -79,7 +82,7 @@ const ImageChipNodeView: React.FC<any> = ({ node, deleteNode, selected }) => {
         className={`group inline-flex items-center gap-1.5 px-2 py-0.5 mx-1 rounded-lg border border-brand-200/90 dark:border-brand-800/80 bg-brand-50/90 dark:bg-brand-950/70 hover:bg-brand-100 dark:hover:bg-brand-900 text-brand-900 dark:text-brand-200 text-xs font-medium cursor-pointer shadow-sm transition-all hover:scale-[1.01] active:scale-[0.98] align-middle ${
           selected ? 'ring-2 ring-brand-500 border-brand-500 shadow-sm' : ''
         }`}
-        title="Click to view full image in popup"
+        title={isPendingUpload ? 'Uploading to S3...' : 'Click to view full image in popup'}
       >
         <span className="w-3.5 h-3.5 rounded overflow-hidden bg-brand-200/60 dark:bg-brand-800/60 flex items-center justify-center shrink-0 border border-brand-300/40 dark:border-brand-700/40">
           {src ? (
@@ -100,10 +103,14 @@ const ImageChipNodeView: React.FC<any> = ({ node, deleteNode, selected }) => {
           {displayName}
         </span>
 
-        <ArrowSquareOut
-          size={11}
-          className="text-slate-400 dark:text-slate-500 group-hover:text-brand-600 dark:group-hover:text-brand-400 shrink-0 transition-colors"
-        />
+        {isPendingUpload ? (
+          <CircleNotch size={11} className="animate-spin text-brand-500 shrink-0" />
+        ) : (
+          <ArrowSquareOut
+            size={11}
+            className="text-slate-400 dark:text-slate-500 group-hover:text-brand-600 dark:group-hover:text-brand-400 shrink-0 transition-colors"
+          />
+        )}
 
         <button
           type="button"
@@ -192,57 +199,91 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     }, 600);
   };
 
-  // Upload helper that inserts at current cursor position
+  // Instant optimistic upload helper that eliminates race conditions and typing loss
   const handleUploadAndInsertImage = async (file: File) => {
     if (!file.type.startsWith('image/')) {
       onShowToast('Only image files are supported', 'error');
       return;
     }
 
+    const tempSrc = URL.createObjectURL(file);
+    const fileName = file.name || 'Pasted Image';
+
+    // 1. Instantly place optimistic image chip at current cursor position
+    if (!isRawMode && editor) {
+      editor
+        .chain()
+        .focus()
+        .setImage({
+          src: tempSrc,
+          alt: fileName,
+          title: fileName,
+        })
+        .run();
+    } else {
+      const textarea = rawTextareaRef.current;
+      const mdTag = `\n![${fileName}](${tempSrc})\n`;
+      if (textarea) {
+        const start = textarea.selectionStart;
+        const end = textarea.selectionEnd;
+        setRawContent((prev) => {
+          return prev.substring(0, start) + mdTag + prev.substring(end);
+        });
+      } else {
+        setRawContent((prev) => prev + mdTag);
+      }
+    }
+
+    // 2. Perform background S3 upload without blocking typing or overwriting state
     try {
       setIsUploading(true);
-      onShowToast(`Uploading ${file.name} to S3...`, 'info');
       const attachment = await uploadAttachment(file, note.id);
 
       if (!isRawMode && editor) {
-        // Insert directly at current cursor position in TipTap
-        editor
-          .chain()
-          .focus()
-          .setImage({
-            src: attachment.fileUrl,
-            alt: attachment.fileName,
-            title: attachment.fileName,
-          })
-          .run();
+        // In-place node mutation preserving all freshly typed text
+        const { state } = editor.view;
+        state.doc.descendants((node, pos) => {
+          if (node.type.name === 'image' && node.attrs.src === tempSrc) {
+            editor.view.dispatch(
+              state.tr.setNodeMarkup(pos, undefined, {
+                ...node.attrs,
+                src: attachment.fileUrl,
+                alt: attachment.fileName,
+                title: attachment.fileName,
+              })
+            );
+          }
+        });
 
         const currentMarkdown = getEditorMarkdown(editor);
         setRawContent(currentMarkdown);
         triggerAutoSave(title, currentMarkdown, isPinned, isArchived, selectedTagIds);
       } else {
-        // Insert markdown tag at cursor position in raw textarea
-        const textarea = rawTextareaRef.current;
-        const mdTag = `\n![${attachment.fileName}](${attachment.fileUrl})\n`;
-        if (textarea) {
-          const start = textarea.selectionStart;
-          const end = textarea.selectionEnd;
-          const newContent =
-            rawContent.substring(0, start) + mdTag + rawContent.substring(end);
-          setRawContent(newContent);
-          triggerAutoSave(title, newContent, isPinned, isArchived, selectedTagIds);
-        } else {
-          const newContent = rawContent + mdTag;
-          setRawContent(newContent);
-          triggerAutoSave(title, newContent, isPinned, isArchived, selectedTagIds);
-        }
+        // Functional update ensuring latest textarea typing is preserved
+        setRawContent((latest) => {
+          const updated = latest.replace(tempSrc, attachment.fileUrl);
+          triggerAutoSave(title, updated, isPinned, isArchived, selectedTagIds);
+          return updated;
+        });
       }
 
-      onShowToast('Image uploaded and inserted', 'success');
-      onUpdate({});
+      onShowToast('Image uploaded and synced', 'success');
     } catch (err: any) {
       onShowToast(`Upload failed: ${err.message}`, 'error');
+      // If upload failed, clean up optimistic node
+      if (!isRawMode && editor) {
+        const { state } = editor.view;
+        state.doc.descendants((node, pos) => {
+          if (node.type.name === 'image' && node.attrs.src === tempSrc) {
+            editor.view.dispatch(state.tr.delete(pos, pos + node.nodeSize));
+          }
+        });
+      } else {
+        setRawContent((latest) => latest.replace(`\n![${fileName}](${tempSrc})\n`, ''));
+      }
     } finally {
       setIsUploading(false);
+      URL.revokeObjectURL(tempSrc);
     }
   };
 
