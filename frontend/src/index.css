@@ -81,6 +81,8 @@
   line-height: 1.6;
   cursor: text;
   padding-bottom: 2rem;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {

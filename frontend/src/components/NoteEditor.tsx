@@ -279,7 +279,13 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         placeholder:
           'Write note in Visual Mode... (Paste screenshots with ⌘V or drag & drop images to insert directly at cursor)',
       }),
-      Markdown,
+      Markdown.configure({
+        html: true,
+        breaks: true,
+        linkify: true,
+        transformPastedText: true,
+        transformCopiedText: true,
+      }),
     ],
     content: note.content || '',
     editorProps: {
