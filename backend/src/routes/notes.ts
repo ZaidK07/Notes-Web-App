@@ -1,6 +1,6 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
 import { v4 as uuidv4 } from 'uuid';
-import { eq, desc, and, like, or, inArray } from 'drizzle-orm';
+import { eq, desc, and, like, or, inArray, notInArray } from 'drizzle-orm';
 import { db } from '../db/index.js';
 import { notes, tags, noteTags, attachments, Attachment } from '../db/schema.js';
 import { deleteFromS3 } from '../services/s3.js';
@@ -77,8 +77,13 @@ export const noteRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) =
     // Filter by archive state (default: not archived, unless explicitly requested)
     if (query.isArchived !== undefined) {
       conditions.push(eq(notes.isArchived, query.isArchived === 'true'));
-    } else {
+    } else if (!query.tagId) {
       conditions.push(eq(notes.isArchived, false));
+    }
+
+    // Tags act as separate note pages; general views contain untagged notes.
+    if (!query.tagId) {
+      conditions.push(notInArray(notes.id, db.select({ noteId: noteTags.noteId }).from(noteTags)));
     }
 
     if (query.isPinned !== undefined) {

@@ -87,6 +87,30 @@
 /* A separate block guarantees scrollable space after either editor's content. */
 .note-editor-bottom-space {
   height: clamp(8rem, 30vh, 18rem);
+  margin: 1.5rem -2rem -1.5rem;
+  border-top: 1px dashed #cbd5e1;
+  background: linear-gradient(to bottom, #f1f5f9, #f8fafc);
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 1rem 2rem;
+  user-select: none;
+}
+
+.note-editor-end-label {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: #64748b;
+}
+
+.dark .note-editor-bottom-space {
+  border-top-color: #475569;
+  background: linear-gradient(to bottom, rgb(30 41 59 / 65%), rgb(15 23 42 / 35%));
+}
+
+.dark .note-editor-end-label {
+  color: #94a3b8;
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {

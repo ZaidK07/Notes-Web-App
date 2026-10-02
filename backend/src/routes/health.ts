@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyPluginAsync } from 'fastify';
-import { count, eq } from 'drizzle-orm';
+import { count, eq, and, notInArray } from 'drizzle-orm';
 import { pool, db } from '../db/index.js';
-import { notes, attachments, tags } from '../db/schema.js';
+import { notes, attachments, tags, noteTags } from '../db/schema.js';
 import { checkS3Health } from '../services/s3.js';
 
 export const healthRoutes: FastifyPluginAsync = async (fastify: FastifyInstance) => {
@@ -35,18 +35,20 @@ export const healthRoutes: FastifyPluginAsync = async (fastify: FastifyInstance)
     };
   });
 
-  // GET /api/stats - Total notes, attachments, tags count
+  // GET /api/stats - Total notes, attachments, tags, noteTags count
   fastify.get('/stats', async (request, reply) => {
     try {
       const [totalNotes] = await db.select({ val: count() }).from(notes);
-      const [pinnedNotes] = await db.select({ val: count() }).from(notes).where(eq(notes.isPinned, true));
-      const [archivedNotes] = await db.select({ val: count() }).from(notes).where(eq(notes.isArchived, true));
+      const untagged = notInArray(notes.id, db.select({ noteId: noteTags.noteId }).from(noteTags));
+      const [activeNotes] = await db.select({ val: count() }).from(notes).where(and(untagged, eq(notes.isArchived, false)));
+      const [pinnedNotes] = await db.select({ val: count() }).from(notes).where(and(untagged, eq(notes.isPinned, true), eq(notes.isArchived, false)));
+      const [archivedNotes] = await db.select({ val: count() }).from(notes).where(and(untagged, eq(notes.isArchived, true)));
       const [totalAttachments] = await db.select({ val: count() }).from(attachments);
       const [totalTags] = await db.select({ val: count() }).from(tags);
 
       return {
         totalNotes: totalNotes?.val || 0,
-        activeNotes: (totalNotes?.val || 0) - (archivedNotes?.val || 0),
+        activeNotes: activeNotes?.val || 0,
         pinnedNotes: pinnedNotes?.val || 0,
         archivedNotes: archivedNotes?.val || 0,
         totalAttachments: totalAttachments?.val || 0,

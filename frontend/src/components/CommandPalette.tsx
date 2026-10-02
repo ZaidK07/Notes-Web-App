@@ -47,13 +47,6 @@ export const CommandPalette: React.FC<CommandPaletteProps> = ({
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        if (isOpen) onClose();
-        else {
-          // Open handled by parent listener
-        }
-      }
       if (e.key === 'Escape' && isOpen) {
         onClose();
       }

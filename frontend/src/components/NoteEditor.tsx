@@ -34,13 +34,12 @@ import {
   X,
 } from '@phosphor-icons/react';
 import Paragraph from '@tiptap/extension-paragraph';
-import { Note, Tag, Attachment } from '../types';
+import { Note, Attachment } from '../types';
 import { uploadAttachment } from '../services/api';
 import { LinkModal } from './LinkModal';
 
 interface NoteEditorProps {
   note: Note;
-  allTags: Tag[];
   onUpdate: (updatedData: Partial<Note> & { tagIds?: string[] }) => Promise<void>;
   onDelete: () => void;
   onOpenAttachmentModal: (attachment: Attachment) => void;
@@ -156,7 +155,6 @@ const CustomImageExtension = ImageExtension.extend({
 
 export const NoteEditor: React.FC<NoteEditorProps> = ({
   note,
-  allTags,
   onUpdate,
   onDelete,
   onOpenAttachmentModal,
@@ -377,6 +375,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     content: note.content || '',
     editorProps: {
       attributes: {
+        spellcheck: 'false',
         class:
           'focus:outline-none min-h-full flex-1 text-slate-800 dark:text-slate-200 font-sans leading-relaxed text-sm cursor-text',
       },
@@ -489,15 +488,6 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     triggerAutoSave(title, contentToSave, isPinned, next, selectedTagIds);
   };
 
-  const handleToggleTag = (tagId: string) => {
-    const nextTagIds = selectedTagIds.includes(tagId)
-      ? selectedTagIds.filter((id) => id !== tagId)
-      : [...selectedTagIds, tagId];
-    setSelectedTagIds(nextTagIds);
-    const contentToSave = isRawMode ? rawContent : getEditorMarkdown(editor);
-    triggerAutoSave(title, contentToSave, isPinned, isArchived, nextTagIds);
-  };
-
   // Raw mode paste handler
   const handleRawPaste = (e: React.ClipboardEvent) => {
     const items = e.clipboardData?.items;
@@ -540,7 +530,11 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   // Click handler to move cursor to the bottom when clicking anywhere in empty editor space
   const handleEditorContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    if (target.closest('textarea')) return;
+    // A click after dragging can target the container shared by several text
+    // blocks. Moving focus to the end here would erase the new selection.
+    const selection = window.getSelection();
+    if (selection && !selection.isCollapsed) return;
+    if (target.closest('textarea, .ProseMirror')) return;
     // Don't interfere with button clicks, link clicks, checkbox toggles, or image chip interactions
     if (target.closest('button, a, input, label, [data-node-view-wrapper]')) {
       return;
@@ -583,9 +577,10 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           <input
             type="text"
             value={title}
+            spellCheck={false}
             onChange={handleTitleChange}
             placeholder="Untitled Note..."
-            className="text-2xl font-bold bg-transparent border-none text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none flex-1 tracking-tight"
+            className="text-3xl font-bold bg-transparent border-none text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none flex-1 tracking-tight"
           />
 
           {/* Action Toolbar */}
@@ -652,28 +647,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
           </div>
         </div>
 
-        {/* Tags Row */}
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs text-slate-400 dark:text-slate-500 font-medium mr-1">
-            Tags:
-          </span>
-          {allTags.map((tag) => {
-            const isSelected = selectedTagIds.includes(tag.id);
-            return (
-              <button
-                key={tag.id}
-                onClick={() => handleToggleTag(tag.id)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                  isSelected
-                    ? 'bg-brand-500 text-white shadow-sm'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
-              >
-                #{tag.name}
-              </button>
-            );
-          })}
-        </div>
+
       </div>
 
       {/* Formatting Toolbar (Available in Visual Editor) */}
@@ -868,6 +842,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         {isRawMode ? (
           <textarea
             ref={rawTextareaRef}
+            spellCheck={false}
             value={rawContent}
             onChange={handleRawContentChange}
             onPaste={handleRawPaste}
@@ -881,7 +856,9 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
             <EditorContent editor={editor} className="min-h-full cursor-text" />
           </div>
         )}
-        <div className="note-editor-bottom-space" aria-hidden="true" />
+        <div className="note-editor-bottom-space" aria-hidden="true">
+          <span className="note-editor-end-label">End of note</span>
+        </div>
       </div>
 
       {/* Custom Link Modal */}

@@ -100,6 +100,17 @@ export function NotesAppContent() {
   }, [isDraggingNotesColumn]);
 
   const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
+  useEffect(() => {
+    const handleSearchShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && !event.altKey && !event.isComposing) {
+        event.preventDefault();
+        event.stopPropagation();
+        if (!event.repeat) setIsCommandPaletteOpen((open) => !open);
+      }
+    };
+    window.addEventListener('keydown', handleSearchShortcut, true);
+    return () => window.removeEventListener('keydown', handleSearchShortcut, true);
+  }, []);
   const [isStatsModalOpen, setIsStatsModalOpen] = useState(false);
   const [activeAttachmentModal, setActiveAttachmentModal] = useState<Attachment | null>(null);
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -169,7 +180,7 @@ export function NotesAppContent() {
   // Reload notes based on current view filter and search
   const reloadNotes = useCallback(async () => {
     try {
-      const isArchived = currentView === 'archived';
+      const isArchived = currentView.startsWith('tag:') ? undefined : currentView === 'archived';
       const isPinned = currentView === 'pinned' ? true : undefined;
       const tagId = currentView.startsWith('tag:') ? currentView.replace('tag:', '') : undefined;
 
@@ -233,6 +244,7 @@ export function NotesAppContent() {
       navigateToView(currentView === 'gallery' || currentView === 'archived' ? 'all' : currentView, newNote.id);
       addToast('New note created', 'success');
       fetchStats().then(setStats).catch(() => {});
+      fetchTags().then(setTags).catch(() => {});
     } catch (err) {
       addToast('Failed to create note', 'error');
     }
@@ -287,6 +299,12 @@ export function NotesAppContent() {
     e.stopPropagation();
     try {
       const updated = await updateNote(note.id, { isArchived: !note.isArchived });
+      if (currentView.startsWith('tag:')) {
+        setNotes((prev) => prev.map((n) => n.id === note.id ? updated : n));
+        addToast(updated.isArchived ? 'Note archived' : 'Note restored', 'success');
+        fetchStats().then(setStats).catch(() => {});
+        return;
+      }
       const remaining = notes.filter((n) => n.id !== note.id);
       setNotes(remaining);
       if (selectedNoteId === note.id) {
@@ -343,8 +361,16 @@ export function NotesAppContent() {
     }
   };
 
-  const handleNavigateToNoteFromGallery = (noteId: string) => {
-    navigateToView('all', noteId);
+  const handleNavigateToNoteFromGallery = async (noteId: string) => {
+    try {
+      const note = await fetchNote(noteId);
+      const view: ViewFilter = note.tags?.length
+        ? `tag:${note.tags[0].id}`
+        : note.isArchived ? 'archived' : 'all';
+      navigateToView(view, noteId);
+    } catch {
+      addToast('Failed to open note', 'error');
+    }
   };
 
   return (
@@ -469,7 +495,6 @@ export function NotesAppContent() {
               <NoteEditor
                 key={activeNote.id}
                 note={activeNote}
-                allTags={tags}
                 onUpdate={handleUpdateNote}
                 onDelete={() => {
                   setConfirmDeleteNoteId(activeNote.id);

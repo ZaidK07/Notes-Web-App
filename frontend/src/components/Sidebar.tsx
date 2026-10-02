@@ -10,6 +10,11 @@ import {
   HardDrives,
   CheckCircle,
   SidebarSimple,
+  Hash,
+  Star,
+  BookOpen,
+  Briefcase,
+  Heart,
 } from '@phosphor-icons/react';
 import { Tag, ViewFilter, Stats } from '../types';
 
@@ -24,6 +29,14 @@ interface SidebarProps {
   onToggleCollapse: () => void;
 }
 
+const tagIconChoices = [
+  { id: 'hash', label: 'Hash', Icon: Hash },
+  { id: 'star', label: 'Star', Icon: Star },
+  { id: 'book', label: 'Book', Icon: BookOpen },
+  { id: 'briefcase', label: 'Work', Icon: Briefcase },
+  { id: 'heart', label: 'Heart', Icon: Heart },
+];
+
 export const Sidebar: React.FC<SidebarProps> = ({
   currentView,
   onSelectView,
@@ -34,6 +47,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
   isCollapsed,
   onToggleCollapse,
 }) => {
+  const [tagIcons, setTagIcons] = useState<Record<string, string>>(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem('notes_tag_icons') || '{}');
+      return saved && typeof saved === 'object' && !Array.isArray(saved) ? saved : {};
+    } catch {
+      return {};
+    }
+  });
+  const [iconPickerTagId, setIconPickerTagId] = useState<string | null>(null);
+  const selectTagIcon = (tagId: string, iconId: string) => {
+    const next = { ...tagIcons, [tagId]: iconId };
+    setTagIcons(next);
+    localStorage.setItem('notes_tag_icons', JSON.stringify(next));
+    setIconPickerTagId(null);
+  };
+  const getTagIcon = (tagId: string) =>
+    (tagIconChoices.find((choice) => choice.id === tagIcons[tagId]) || tagIconChoices[0]).Icon;
+
   const [isCreatingTag, setIsCreatingTag] = useState(false);
   const [newTagName, setNewTagName] = useState('');
   const [submittingTag, setSubmittingTag] = useState(false);
@@ -122,7 +153,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               title={isCollapsed ? `${item.label} (${item.count})` : undefined}
             >
               <div className="flex items-center gap-2.5">
-                <Icon size={18} weight={isActive ? 'fill' : 'regular'} />
+                <Icon size={18} weight="regular" />
                 {!isCollapsed && <span>{item.label}</span>}
               </div>
               {!isCollapsed && item.count > 0 && (
@@ -190,10 +221,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {tags.map((tag) => {
             const viewKey: ViewFilter = `tag:${tag.id}`;
             const isActive = currentView === viewKey;
+            const TagIcon = getTagIcon(tag.id);
 
             return (
+              <React.Fragment key={tag.id}>
               <div
-                key={tag.id}
                 className={`group flex items-center justify-between px-3 py-1.5 rounded-xl text-sm font-medium transition-all ${
                   isActive
                     ? 'bg-brand-500 text-white shadow-sm'
@@ -204,11 +236,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   onClick={() => onSelectView(viewKey)}
                   className="flex items-center gap-2 min-w-0 flex-1 text-left"
                 >
-                  <span className="w-2 h-2 rounded-full bg-brand-400 shrink-0" />
+                  <TagIcon size={16} className="shrink-0" />
                   <span className="truncate">#{tag.name}</span>
                 </button>
 
                 <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    onClick={() => setIconPickerTagId(iconPickerTagId === tag.id ? null : tag.id)}
+                    className="p-1 rounded hover:bg-slate-200/60 dark:hover:bg-slate-800"
+                    title={`Choose icon for ${tag.name}`}
+                    aria-label={`Choose icon for ${tag.name}`}
+                    aria-expanded={iconPickerTagId === tag.id}
+                  >
+                    <TagIcon size={14} />
+                  </button>
                   {tag.noteCount !== undefined && tag.noteCount > 0 && (
                     <span
                       className={`text-xs px-1.5 py-0.2 rounded font-mono ${
@@ -232,6 +273,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </button>
                 </div>
               </div>
+              {iconPickerTagId === tag.id && (
+                <div className="flex items-center gap-1 px-3 py-2" role="group" aria-label={`Icons for ${tag.name}`}>
+                  {tagIconChoices.map(({ id, label, Icon }) => (
+                    <button
+                      key={id}
+                      onClick={() => selectTagIcon(tag.id, id)}
+                      title={label}
+                      aria-label={label}
+                      aria-pressed={(tagIcons[tag.id] || 'hash') === id}
+                      className={`p-2 rounded-lg transition-colors ${(tagIcons[tag.id] || 'hash') === id ? 'bg-brand-500 text-white' : 'text-slate-500 hover:bg-slate-200 dark:hover:bg-slate-800'}`}
+                    >
+                      <Icon size={18} />
+                    </button>
+                  ))}
+                </div>
+              )}
+              </React.Fragment>
             );
           })}
         </div>
@@ -240,6 +298,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {tags.map((tag) => {
             const viewKey: ViewFilter = `tag:${tag.id}`;
             const isActive = currentView === viewKey;
+            const TagIcon = getTagIcon(tag.id);
             return (
               <button
                 key={tag.id}
@@ -251,7 +310,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 }`}
                 title={`#${tag.name}`}
               >
-                #
+                <TagIcon size={18} />
               </button>
             );
           })}
