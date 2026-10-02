@@ -33,6 +33,7 @@ import {
   ArrowSquareOut,
   X,
 } from '@phosphor-icons/react';
+import Paragraph from '@tiptap/extension-paragraph';
 import { Note, Tag, Attachment } from '../types';
 import { uploadAttachment } from '../services/api';
 import { LinkModal } from './LinkModal';
@@ -45,6 +46,28 @@ interface NoteEditorProps {
   onOpenAttachmentModal: (attachment: Attachment) => void;
   onShowToast: (msg: string, type?: 'success' | 'error' | 'info') => void;
 }
+
+// Custom Paragraph extension to strictly preserve leading, trailing, and multi-line enters
+const CustomParagraph = Paragraph.extend({
+  addStorage() {
+    return {
+      markdown: {
+        serialize(state: any, node: any) {
+          if (node.content.size === 0) {
+            state.write('&nbsp;');
+            state.closeBlock(node);
+          } else {
+            state.renderInline(node);
+            state.closeBlock(node);
+          }
+        },
+        parse: {
+          // Handled by markdown-it
+        },
+      },
+    };
+  },
+});
 
 function getEditorMarkdown(ed: any): string {
   if (!ed) return '';
@@ -294,7 +317,9 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
     extensions: [
       StarterKit.configure({
         heading: { levels: [1, 2, 3] },
+        paragraph: false,
       }),
+      CustomParagraph,
       LinkExtension.configure({
         openOnClick: false,
         HTMLAttributes: {

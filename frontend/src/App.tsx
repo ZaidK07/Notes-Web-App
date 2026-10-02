@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useLocation, useNavigate, Routes, Route, Navigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { NoteCard } from './components/NoteCard';
@@ -220,9 +221,10 @@ export function NotesAppContent() {
 
   const handleNewNote = async () => {
     try {
+      const defaultTitle = format(new Date(), 'MMM d, h:mm a');
       const tagIds = currentView.startsWith('tag:') ? [currentView.replace('tag:', '')] : [];
       const newNote = await createNote({
-        title: 'Untitled Note',
+        title: defaultTitle,
         content: '',
         tagIds,
       });

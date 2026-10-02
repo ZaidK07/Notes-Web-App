@@ -80,7 +80,7 @@
   flex: 1 1 auto;
   line-height: 1.6;
   cursor: text;
-  padding-bottom: 2rem;
+  padding-bottom: 50vh !important;
   white-space: pre-wrap;
   word-break: break-word;
 }
