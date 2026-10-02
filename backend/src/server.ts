@@ -6,7 +6,7 @@ import path from 'path';
 dotenv.config({ path: path.resolve(process.cwd(), '.env') });
 dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
 
-const PORT = parseInt(process.env.PORT || '7818', 10);
+const PORT = parseInt(process.env.PORT || '9548', 10);
 const HOST = process.env.HOST || '0.0.0.0';
 
 async function start() {

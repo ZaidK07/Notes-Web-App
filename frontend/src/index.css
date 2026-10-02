@@ -80,6 +80,7 @@
   flex: 1 1 auto;
   line-height: 1.6;
   cursor: text;
+  padding-bottom: 2rem;
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {

@@ -115,11 +115,11 @@ npm run dev:backend
 
 ### 4. Start Development Servers
 ```bash
-# Starts both Backend (port 5000) and Frontend (port 5173)
+# Starts both Backend (port 9548) and Frontend (port 9547)
 npm run dev
 ```
 
-Visit **http://localhost:5173** to access the application.
+Visit **http://localhost:9547** to access the application.
 
 ---
 
@@ -129,9 +129,9 @@ Visit **http://localhost:5173** to access the application.
 
 | Variable | Required | Default | Description |
 | :--- | :---: | :--- | :--- |
-| `PORT` | No | `5000` | Fastify server listen port |
+| `PORT` | No | `9548` | Fastify server listen port |
 | `HOST` | No | `0.0.0.0` | Fastify host bind address |
-| `CORS_ORIGIN` | No | `http://localhost:5173` | Allowed CORS frontend origin |
+| `CORS_ORIGIN` | No | `http://localhost:9547` | Allowed CORS frontend origin |
 | `DB_HOST` | **Yes** | `localhost` | MySQL Host |
 | `DB_PORT` | No | `3306` | MySQL Port |
 | `DB_USER` | **Yes** | `root` | MySQL User |

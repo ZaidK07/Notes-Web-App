@@ -4,9 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 7819",
+    "dev": "vite --port 9547",
     "build": "tsc && vite build",
-    "preview": "vite preview --port 7819"
+    "preview": "vite preview --port 9547",
+    "test": "tsc --noEmit"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.7",

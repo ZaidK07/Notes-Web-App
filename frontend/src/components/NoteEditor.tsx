@@ -749,26 +749,50 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         </div>
       )}
 
-      {/* Editor Body */}
+      {/* Editor Body with balanced bottom static space for full notes & comfortable scrolling */}
       <div
-        className="flex-1 overflow-y-auto p-6 cursor-text flex flex-col"
+        className="flex-1 overflow-y-auto px-8 pt-6 pb-8 cursor-text flex flex-col scroll-smooth"
         onClick={handleEditorContainerClick}
       >
         {isRawMode ? (
-          <textarea
-            ref={rawTextareaRef}
-            value={rawContent}
-            onChange={handleRawContentChange}
-            onPaste={handleRawPaste}
-            placeholder="Write raw Markdown here... (⌘V pastes images at cursor position)"
-            className="w-full flex-1 min-h-full bg-transparent border-none resize-none text-slate-800 dark:text-slate-200 font-mono text-sm leading-relaxed focus:outline-none placeholder-slate-400 cursor-text"
-          />
+          <div className="flex-1 flex flex-col min-h-full cursor-text">
+            <textarea
+              ref={rawTextareaRef}
+              value={rawContent}
+              onChange={handleRawContentChange}
+              onPaste={handleRawPaste}
+              placeholder="Write raw Markdown here... (⌘V pastes images at cursor position)"
+              className="w-full flex-1 min-h-[350px] bg-transparent border-none resize-none text-slate-800 dark:text-slate-200 font-mono text-sm leading-relaxed focus:outline-none placeholder-slate-400 cursor-text"
+            />
+            {/* Static non-writable bottom overscroll area */}
+            <div
+              className="h-[30vh] min-h-[210px] w-full cursor-text shrink-0 select-none"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (rawTextareaRef.current) {
+                  rawTextareaRef.current.focus();
+                  const len = rawTextareaRef.current.value.length;
+                  rawTextareaRef.current.setSelectionRange(len, len);
+                }
+              }}
+            />
+          </div>
         ) : (
           <div
             className="flex-1 flex flex-col min-h-full cursor-text"
             onClick={handleEditorContainerClick}
           >
             <EditorContent editor={editor} className="flex-1 flex flex-col min-h-full cursor-text" />
+            {/* Static non-writable bottom overscroll area for comfortable scrolling */}
+            <div
+              className="h-[30vh] min-h-[210px] w-full cursor-text shrink-0 select-none"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (editor) {
+                  editor.chain().focus('end').run();
+                }
+              }}
+            />
           </div>
         )}
       </div>

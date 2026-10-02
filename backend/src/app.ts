@@ -43,7 +43,7 @@ export async function buildApp(): Promise<FastifyInstance> {
       },
       servers: [
         {
-          url: `http://localhost:${process.env.PORT || 7818}`,
+          url: `http://localhost:${process.env.PORT || 9548}`,
           description: 'Local Server',
         },
       ],

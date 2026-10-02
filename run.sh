@@ -8,8 +8,8 @@
 
 set -e
 
-BACKEND_PORT=7818
-FRONTEND_PORT=7819
+BACKEND_PORT=9548
+FRONTEND_PORT=9547
 MODE="production"
 
 # Parse arguments
