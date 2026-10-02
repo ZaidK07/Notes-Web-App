@@ -80,9 +80,13 @@
   flex: 1 1 auto;
   line-height: 1.6;
   cursor: text;
-  padding-bottom: 50vh !important;
   white-space: pre-wrap;
   word-break: break-word;
+}
+
+/* A separate block guarantees scrollable space after either editor's content. */
+.note-editor-bottom-space {
+  height: clamp(8rem, 30vh, 18rem);
 }
 
 .ProseMirror p.is-editor-empty:first-child::before {

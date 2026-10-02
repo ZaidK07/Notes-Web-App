@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { useEditor, EditorContent, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import LinkExtension from '@tiptap/extension-link';
@@ -183,6 +183,27 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const rawTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Use the outer scroll area in RAW mode too, including the space after the note.
+  useLayoutEffect(() => {
+    const textarea = rawTextareaRef.current;
+    if (!isRawMode || !textarea) return;
+
+    const resize = () => {
+      textarea.style.height = '0px';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    };
+    resize();
+    let previousWidth = textarea.clientWidth;
+    const observer = new ResizeObserver(() => {
+      if (textarea.clientWidth !== previousWidth) {
+        previousWidth = textarea.clientWidth;
+        resize();
+      }
+    });
+    observer.observe(textarea);
+    return () => observer.disconnect();
+  }, [isRawMode, rawContent]);
 
   // Persist raw mode preference
   const toggleRawMode = () => {
@@ -519,6 +540,7 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
   // Click handler to move cursor to the bottom when clicking anywhere in empty editor space
   const handleEditorContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
+    if (target.closest('textarea')) return;
     // Don't interfere with button clicks, link clicks, checkbox toggles, or image chip interactions
     if (target.closest('button, a, input, label, [data-node-view-wrapper]')) {
       return;
@@ -838,52 +860,28 @@ export const NoteEditor: React.FC<NoteEditorProps> = ({
         </div>
       )}
 
-      {/* Editor Body with balanced bottom static space for full notes & comfortable scrolling */}
+      {/* Editor Body */}
       <div
-        className="flex-1 overflow-y-auto px-8 pt-6 pb-8 cursor-text flex flex-col scroll-smooth"
+        className="flex-1 min-h-0 overflow-y-auto px-8 py-6 cursor-text"
         onClick={handleEditorContainerClick}
       >
         {isRawMode ? (
-          <div className="flex-1 flex flex-col min-h-full cursor-text">
-            <textarea
-              ref={rawTextareaRef}
-              value={rawContent}
-              onChange={handleRawContentChange}
-              onPaste={handleRawPaste}
-              placeholder="Write raw Markdown here... (⌘V pastes images at cursor position)"
-              className="w-full flex-1 min-h-[350px] bg-transparent border-none resize-none text-slate-800 dark:text-slate-200 font-mono text-sm leading-relaxed focus:outline-none placeholder-slate-400 cursor-text"
-            />
-            {/* Static non-writable bottom overscroll area */}
-            <div
-              className="h-[30vh] min-h-[210px] w-full cursor-text shrink-0 select-none"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (rawTextareaRef.current) {
-                  rawTextareaRef.current.focus();
-                  const len = rawTextareaRef.current.value.length;
-                  rawTextareaRef.current.setSelectionRange(len, len);
-                }
-              }}
-            />
-          </div>
+          <textarea
+            ref={rawTextareaRef}
+            value={rawContent}
+            onChange={handleRawContentChange}
+            onPaste={handleRawPaste}
+            placeholder="Write raw Markdown here... (⌘V pastes images at cursor position)"
+            className="block w-full min-h-[20rem] overflow-hidden bg-transparent border-none resize-none text-slate-800 dark:text-slate-200 font-mono text-sm leading-relaxed focus:outline-none placeholder-slate-400 cursor-text"
+          />
         ) : (
           <div
-            className="flex-1 flex flex-col min-h-full cursor-text"
-            onClick={handleEditorContainerClick}
+            className="min-h-full cursor-text"
           >
-            <EditorContent editor={editor} className="flex-1 flex flex-col min-h-full cursor-text" />
-            {/* Static non-writable bottom overscroll area for comfortable scrolling */}
-            <div
-              className="h-[30vh] min-h-[210px] w-full cursor-text shrink-0 select-none"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (editor) {
-                  editor.chain().focus('end').run();
-                }
-              }}
-            />
+            <EditorContent editor={editor} className="min-h-full cursor-text" />
           </div>
         )}
+        <div className="note-editor-bottom-space" aria-hidden="true" />
       </div>
 
       {/* Custom Link Modal */}
