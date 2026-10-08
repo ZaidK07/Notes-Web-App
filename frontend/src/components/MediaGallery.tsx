@@ -60,10 +60,18 @@ export const MediaGallery: React.FC<MediaGalleryProps> = ({
   const [cardDensity, setCardDensity] = useState<CardDensity>(() => {
     return (localStorage.getItem('media_gallery_card_density') as CardDensity) || 'comfortable';
   });
+  const [imageFit, setImageFit] = useState<'contain' | 'cover'>(() => {
+    return (localStorage.getItem('media_gallery_image_fit') as 'contain' | 'cover') || 'contain';
+  });
 
   const handleSetDensity = (density: CardDensity) => {
     setCardDensity(density);
     localStorage.setItem('media_gallery_card_density', density);
+  };
+
+  const handleSetImageFit = (fit: 'contain' | 'cover') => {
+    setImageFit(fit);
+    localStorage.setItem('media_gallery_image_fit', fit);
   };
 
   const filtered = useMemo(() => {
@@ -146,8 +154,37 @@ export const MediaGallery: React.FC<MediaGalleryProps> = ({
             </p>
           </div>
 
-          {/* Controls Right Side: Density Toggle & Search */}
+          {/* Controls Right Side: Fit Toggle, Density Toggle & Search */}
           <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+            {/* Image Fit Mode (Fit vs Fill) */}
+            <div className="flex items-center p-1 rounded-xl bg-slate-200/60 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 gap-1 text-xs shrink-0">
+              <button
+                type="button"
+                onClick={() => handleSetImageFit('contain')}
+                className={`px-2.5 py-1 rounded-lg flex items-center gap-1 font-medium transition-all ${
+                  imageFit === 'contain'
+                    ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-sm font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+                title="Fit whole image (no crop)"
+              >
+                <span>Fit</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleSetImageFit('cover')}
+                className={`px-2.5 py-1 rounded-lg flex items-center gap-1 font-medium transition-all ${
+                  imageFit === 'cover'
+                    ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-sm font-semibold'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+                title="Fill thumbnail frame (crop)"
+              >
+                <span>Fill</span>
+              </button>
+            </div>
+
             {/* View Mode Density Toggle */}
             <div className="flex items-center p-1 rounded-xl bg-slate-200/60 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 gap-1 text-xs shrink-0">
               <button
@@ -263,7 +300,7 @@ export const MediaGallery: React.FC<MediaGalleryProps> = ({
         </div>
       ) : cardDensity === 'compact' ? (
         /* Compact Dense Grid */
-        <div className="flex-1 overflow-y-auto grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8 gap-3 items-start content-start pr-1">
+        <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3.5 pr-1 pb-16 [grid-auto-rows:max-content] auto-rows-max">
           {filtered.map((att) => {
             const displayUrl = `/api/attachments/file/${att.id}`;
             const dateDisplay = formatShortDate(att.createdAt);
@@ -272,15 +309,15 @@ export const MediaGallery: React.FC<MediaGalleryProps> = ({
               <div
                 key={att.id}
                 onClick={() => onSelectAttachment(att)}
-                className="group relative rounded-xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 dark:hover:border-brand-500 transition-all shadow-sm hover:shadow-md cursor-pointer flex flex-col"
+                className="group relative rounded-xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 dark:hover:border-brand-500 transition-all shadow-sm hover:shadow-md cursor-pointer flex flex-col h-full"
               >
                 {/* Compact Aspect Ratio Thumbnail */}
-                <div className="w-full h-24 sm:h-28 bg-slate-100 dark:bg-slate-800 overflow-hidden relative flex items-center justify-center">
+                <div className="w-full h-28 sm:h-32 shrink-0 bg-slate-100/90 dark:bg-slate-800/80 overflow-hidden relative flex items-center justify-center p-1">
                   <img
                     src={displayUrl}
                     alt={att.fileName}
                     loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className={`w-full h-full ${imageFit === 'contain' ? 'object-contain' : 'object-cover'} group-hover:scale-105 transition-transform duration-200`}
                     onError={(e) => {
                       const target = e.currentTarget;
                       target.style.display = 'none';
@@ -295,7 +332,7 @@ export const MediaGallery: React.FC<MediaGalleryProps> = ({
                 </div>
 
                 {/* Compact Card Info Footer */}
-                <div className="p-2 flex flex-col gap-0.5 border-t border-slate-100 dark:border-slate-800/80">
+                <div className="p-2.5 shrink-0 flex flex-col gap-0.5 border-t border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900">
                   <span className="text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate" title={att.fileName}>
                     {att.fileName}
                   </span>
@@ -311,7 +348,7 @@ export const MediaGallery: React.FC<MediaGalleryProps> = ({
         </div>
       ) : (
         /* Comfortable Large Grid */
-        <div className="flex-1 overflow-y-auto grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 items-start content-start pr-1">
+        <div className="flex-1 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 pr-1 pb-16 [grid-auto-rows:max-content] auto-rows-max">
           {filtered.map((att) => {
             const displayUrl = `/api/attachments/file/${att.id}`;
             const dateDisplay = formatShortDate(att.createdAt);
@@ -320,15 +357,15 @@ export const MediaGallery: React.FC<MediaGalleryProps> = ({
               <div
                 key={att.id}
                 onClick={() => onSelectAttachment(att)}
-                className="group relative rounded-2xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 dark:hover:border-brand-500 transition-all shadow-sm hover:shadow-md cursor-pointer flex flex-col"
+                className="group relative rounded-2xl overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-brand-500 dark:hover:border-brand-500 transition-all shadow-sm hover:shadow-md cursor-pointer flex flex-col h-full"
               >
                 {/* Fixed Aspect Ratio Thumbnail */}
-                <div className="w-full h-40 bg-slate-100 dark:bg-slate-800 overflow-hidden relative flex items-center justify-center">
+                <div className="w-full h-44 shrink-0 bg-slate-100/90 dark:bg-slate-800/80 overflow-hidden relative flex items-center justify-center p-1.5">
                   <img
                     src={displayUrl}
                     alt={att.fileName}
                     loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    className={`w-full h-full ${imageFit === 'contain' ? 'object-contain' : 'object-cover'} group-hover:scale-105 transition-transform duration-200`}
                     onError={(e) => {
                       const target = e.currentTarget;
                       target.style.display = 'none';
@@ -344,7 +381,7 @@ export const MediaGallery: React.FC<MediaGalleryProps> = ({
                 </div>
 
                 {/* Card Info Footer */}
-                <div className="p-3 flex flex-col gap-1 border-t border-slate-100 dark:border-slate-800/80">
+                <div className="p-3 shrink-0 flex flex-col gap-1 border-t border-slate-100 dark:border-slate-800/80 bg-white dark:bg-slate-900">
                   <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate" title={att.fileName}>
                     {att.fileName}
                   </span>
